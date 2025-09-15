@@ -2,12 +2,295 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Golf Round Input</title>
-  <style>body{font:16px/1.5 system-ui, sans-serif; max-width:800px; margin:40px auto; padding:0 16px}</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Golf Round Tracker</title>
+  <style>
+    :root{
+      --bg:#0b0c10; --panel:#111318; --muted:#9aa3b2; --text:#e8ecf1; --accent:#5eead4; --accent2:#60a5fa; --border:#23262d;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#0f1117 60%);color:var(--text);font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji"}
+    .wrap{max-width:1100px;margin:40px auto;padding:0 16px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:16px}
+    h1{font-size:28px;margin:0;letter-spacing:.2px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
+    .section{padding:16px}
+    .row{display:flex;flex-wrap:wrap;gap:12px}
+    label{font-size:13px;color:var(--muted)}
+    input[type="text"], input[type="number"], input[type="date"], select, textarea{
+      width:100%;padding:10px 12px;background:#0f131a;border:1px solid var(--border);color:var(--text);border-radius:10px;outline:none}
+    input[type="number"]{appearance:textfield}
+    input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button{appearance:none;margin:0}
+    .grid{display:grid;gap:12px}
+    .grid.cols-4{grid-template-columns:repeat(4, minmax(0,1fr))}
+    .grid.cols-3{grid-template-columns:repeat(3, minmax(0,1fr))}
+    .grid.cols-2{grid-template-columns:repeat(2, minmax(0,1fr))}
+    .btns{display:flex;flex-wrap:wrap;gap:10px}
+    button{
+      cursor:pointer;border:1px solid var(--border);background:#121721;color:var(--text);padding:10px 14px;border-radius:12px;font-weight:600
+    }
+    button.primary{background:linear-gradient(180deg,var(--accent2),#3b82f6);color:#0b1020;border:0}
+    button.accent{background:linear-gradient(180deg,var(--accent),#34d3bb);color:#08221d;border:0}
+    button.ghost{background:transparent}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    thead th{font-size:12px;color:var(--muted);text-align:left;padding:8px 10px}
+    tbody td{padding:0 8px}
+    tbody tr{background:#0f131a;border:1px solid var(--border)}
+    tbody tr td:first-child{border-top-left-radius:10px;border-bottom-left-radius:10px}
+    tbody tr td:last-child{border-top-right-radius:10px;border-bottom-right-radius:10px}
+    .hole{width:48px;text-align:center;font-weight:700;color:#b9c3d3}
+    .center{display:flex;align-items:center;justify-content:center}
+    .totals{display:flex;gap:20px;flex-wrap:wrap;color:#c9d4e5}
+    .pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#0f131a}
+    .muted{color:var(--muted)}
+    textarea{min-height:38px;resize:vertical}
+    .footer{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:8px}
+    .json{width:100%;min-height:130px;background:#0a0e14;border:1px dashed #2a2f3a;border-radius:12px;padding:12px;color:#a8ffdf;white-space:pre-wrap}
+    .note{font-size:12px;color:var(--muted)}
+    .tag{display:inline-flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+    a.link{color:var(--accent2);text-decoration:none}
+    .sr-only{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+  </style>
 </head>
 <body>
-  <h1>Golf Round Input</h1>
-  <p>Hello, world.</p>
+  <div class="wrap">
+    <header>
+      <h1>Golf Round Tracker</h1>
+      <div class="tag" aria-live="polite" id="autosaveStatus">Auto-save: idle</div>
+    </header>
+
+    <div class="card section" aria-labelledby="meta-title">
+      <h2 id="meta-title" class="sr-only">Round details</h2>
+      <div class="grid cols-4">
+        <div>
+          <label for="date">Date</label>
+          <input id="date" type="date" />
+        </div>
+        <div>
+          <label for="course">Course</label>
+          <input id="course" type="text" placeholder="e.g., Army Navy Fairfax" />
+        </div>
+        <div>
+          <label for="tee">Tee</label>
+          <input id="tee" type="text" placeholder="e.g., White" />
+        </div>
+        <div>
+          <label for="notesRound">Round Notes</label>
+          <input id="notesRound" type="text" placeholder="optional" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card section" aria-labelledby="holes-title">
+      <h2 id="holes-title" class="sr-only">Hole by hole inputs</h2>
+      <table role="grid" aria-label="Hole entries">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Strokes</th>
+            <th>Putts</th>
+            <th>GIR</th>
+            <th style="width:45%">Notes</th>
+          </tr>
+        </thead>
+        <tbody id="holesBody"></tbody>
+      </table>
+
+      <div class="footer">
+        <div class="totals" id="totals">
+          <span class="pill">Total Strokes: <strong id="tStrokes">0</strong></span>
+          <span class="pill">Total Putts: <strong id="tPutts">0</strong></span>
+          <span class="pill">GIR: <strong id="tGIR">0</strong>/18</span>
+        </div>
+        <div class="btns">
+          <button class="ghost" id="clearBtn" title="Clear the current round">Clear</button>
+          <button class="accent" id="importBtn" title="Import JSON to fill the table">Import JSON</button>
+          <button class="primary" id="exportBtn" title="Export JSON of this round">Export JSON</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card section">
+      <details>
+        <summary>JSON preview / paste area</summary>
+        <textarea id="jsonArea" class="json" spellcheck="false" aria-label="JSON output preview"></textarea>
+        <div class="note">Export creates and downloads a file and also mirrors it here. Paste JSON here then click <em>Import JSON</em> to load.</div>
+      </details>
+    </div>
+
+    <div class="note">Tip: this page auto-saves to your browser (localStorage). You can host it on GitHub Pages or embed it in Squarespace via an iframe.</div>
+  </div>
+
+  <script>
+    (function(){
+      const LS_KEY = 'golf_round_current_v1';
+      const holesBody = document.getElementById('holesBody');
+      const totalsEl = { strokes: document.getElementById('tStrokes'), putts: document.getElementById('tPutts'), gir: document.getElementById('tGIR') };
+      const dateEl = document.getElementById('date');
+      const courseEl = document.getElementById('course');
+      const teeEl = document.getElementById('tee');
+      const notesRoundEl = document.getElementById('notesRound');
+      const exportBtn = document.getElementById('exportBtn');
+      const importBtn = document.getElementById('importBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const jsonArea = document.getElementById('jsonArea');
+      const autosaveStatus = document.getElementById('autosaveStatus');
+      let saveTimer;
+
+      // Build rows
+      for(let i=1;i<=18;i++){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="hole">${i}</td>
+          <td><input inputmode="numeric" aria-label="Hole ${i} strokes" type="number" min="1" id="strokes-${i}" placeholder=""/></td>
+          <td><input inputmode="numeric" aria-label="Hole ${i} putts" type="number" min="0" id="putts-${i}" placeholder=""/></td>
+          <td class="center"><input aria-label="Hole ${i} green in regulation" type="checkbox" id="gir-${i}" /></td>
+          <td><textarea aria-label="Hole ${i} notes" id="notes-${i}" placeholder="notes (optional)"></textarea></td>
+        `;
+        holesBody.appendChild(tr);
+      }
+
+      function readModel(){
+        const holes = [];
+        for(let i=1;i<=18;i++){
+          const strokes = numVal(`#strokes-${i}`);
+          const putts = numVal(`#putts-${i}`);
+          const gir = document.querySelector(`#gir-${i}`).checked;
+          const notes = document.querySelector(`#notes-${i}`).value.trim();
+          holes.push({ hole:i, strokes, putts, gir, notes });
+        }
+        return {
+          date: dateEl.value || null,
+          course: courseEl.value.trim() || null,
+          tee: teeEl.value.trim() || null,
+          round_notes: notesRoundEl.value.trim() || null,
+          holes
+        };
+      }
+
+      function numVal(sel){
+        const v = document.querySelector(sel).value;
+        if(v === '' || v === null) return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+      }
+
+      function renderModel(data){
+        dateEl.value = data.date || '';
+        courseEl.value = data.course || '';
+        teeEl.value = data.tee || '';
+        notesRoundEl.value = data.round_notes || '';
+        (data.holes||[]).forEach(h=>{
+          const i = h.hole;
+          set(`#strokes-${i}`, h.strokes);
+          set(`#putts-${i}`, h.putts);
+          const g = document.querySelector(`#gir-${i}`);
+          g.checked = !!h.gir;
+          set(`#notes-${i}`, h.notes, true);
+        });
+        recalcTotals();
+      }
+
+      function set(sel, val, isText){
+        const el = document.querySelector(sel);
+        if(el) el[isText? 'value':'value'] = val ?? '';
+      }
+
+      function recalcTotals(){
+        const m = readModel();
+        let tS=0, tP=0, tG=0;
+        m.holes.forEach(h=>{
+          if(typeof h.strokes==='number') tS+=h.strokes;
+          if(typeof h.putts==='number') tP+=h.putts;
+          if(h.gir) tG+=1;
+        });
+        totalsEl.strokes.textContent = tS;
+        totalsEl.putts.textContent = tP;
+        totalsEl.gir.textContent = tG;
+        return {tS,tP,tG};
+      }
+
+      function debouncedSave(){
+        clearTimeout(saveTimer);
+        autosaveStatus.textContent = 'Auto-save: pending…';
+        saveTimer = setTimeout(()=>{
+          const data = readModel();
+          localStorage.setItem(LS_KEY, JSON.stringify(data));
+          autosaveStatus.textContent = 'Auto-save: saved';
+          setTimeout(()=> autosaveStatus.textContent = 'Auto-save: idle', 1500);
+        }, 400);
+      }
+
+      function toJSON(){
+        const model = readModel();
+        const totals = recalcTotals();
+        const out = {
+          ...model,
+          totals: { strokes: totals.tS, putts: totals.tP, gir: totals.tG }
+        };
+        return JSON.stringify(out, null, 2);
+      }
+
+      function download(filename, text){
+        const blob = new Blob([text], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=> URL.revokeObjectURL(url), 1000);
+      }
+
+      // Events
+      document.addEventListener('input', (e)=>{
+        if(e.target.matches('input, textarea')){
+          recalcTotals();
+          debouncedSave();
+        }
+      });
+
+      exportBtn.addEventListener('click', ()=>{
+        const json = toJSON();
+        jsonArea.value = json;
+        const d = (dateEl.value || new Date().toISOString().slice(0,10));
+        const cname = (courseEl.value || 'round').replace(/\s+/g,'-').toLowerCase();
+        download(`golf-round-${cname}-${d}.json`, json);
+      });
+
+      importBtn.addEventListener('click', ()=>{
+        try{
+          const parsed = JSON.parse(jsonArea.value);
+          if(!parsed || !Array.isArray(parsed.holes)) throw new Error('Invalid structure');
+          renderModel(parsed);
+          localStorage.setItem(LS_KEY, JSON.stringify(parsed));
+          autosaveStatus.textContent = 'Imported & saved';
+          setTimeout(()=> autosaveStatus.textContent = 'Auto-save: idle', 1500);
+        }catch(err){
+          alert('Could not import JSON: ' + err.message);
+        }
+      });
+
+      clearBtn.addEventListener('click', ()=>{
+        if(confirm('Clear all fields?')){
+          localStorage.removeItem(LS_KEY);
+          renderModel({holes:Array.from({length:18},(_,i)=>({hole:i+1}))});
+          jsonArea.value = '';
+        }
+      });
+
+      // Init
+      const saved = localStorage.getItem(LS_KEY);
+      if(saved){
+        try{ renderModel(JSON.parse(saved)); }catch{ /* ignore */ }
+      } else {
+        // default date today
+        dateEl.valueAsDate = new Date();
+      }
+      recalcTotals();
+    })();
+  </script>
 </body>
 </html>
