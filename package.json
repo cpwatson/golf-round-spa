@@ -1,0 +1,20 @@
+{
+  "name": "golf-round-spa",
+  "version": "1.0.0",
+  "description": "Golf round tracker utilities",
+  "type": "commonjs",
+  "scripts": {
+    "upload-json": "node scripts/upload-json.js",
+    "test": "node -e \"console.log('No tests defined')\""
+  },
+  "keywords": [
+    "golf",
+    "spa",
+    "gcs"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/storage": "^7.7.0"
+  }
+}
